@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "serve": "npx babel -w src/ -d bin/",
-    "build": "npx babel src/ -d bin/"
+    "build": "npx babel src/ -d bin/",
+    "release":"node scripts/release.js"
   },
   "author": "",
   "license": "ISC",
