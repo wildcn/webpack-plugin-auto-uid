@@ -4,10 +4,6 @@ var _keys = require("babel-runtime/core-js/object/keys");
 
 var _keys2 = _interopRequireDefault(_keys);
 
-var _stringify = require("babel-runtime/core-js/json/stringify");
-
-var _stringify2 = _interopRequireDefault(_stringify);
-
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -15,6 +11,10 @@ var _regenerator2 = _interopRequireDefault(_regenerator);
 var _asyncToGenerator2 = require("babel-runtime/helpers/asyncToGenerator");
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
+
+var _stringify = require("babel-runtime/core-js/json/stringify");
+
+var _stringify2 = _interopRequireDefault(_stringify);
 
 var _classCallCheck2 = require("babel-runtime/helpers/classCallCheck");
 
@@ -38,10 +38,11 @@ var _require = require("./utils"),
     logErr = _require.logErr;
 
 var AutoUid = require("auto-uid");
+console.log("%cAutoUid: ", "color: MidnightBlue; background: Aquamarine;", AutoUid);
 
 var exec = function exec(command) {
   return new _promise2.default(function (resolve, reject) {
-    shell.exec(command, { slice: true }, function (code, stdout, stderr) {
+    shell.exec(command, function (code, stdout, stderr) {
       if (+code === 0 && stdout) {
         resolve(stdout);
       } else {
@@ -59,6 +60,7 @@ var WebpackPluginAutoUid = function () {
       logSuc = logInfo = function logInfo() {};
     }
     logInfo("before run autoUid,comfirm your project has not unpush source.");
+    logInfo("options: " + (0, _stringify2.default)(options));
     this.options = options;
     this.PROJECT_ROOT = process.env.PWD || process.cwd();
   }
@@ -94,64 +96,69 @@ var WebpackPluginAutoUid = function () {
                     return _context.abrupt("return", callback());
 
                   case 5:
-                    _context.next = 7;
+                    logInfo("genUid start");
+                    _context.next = 8;
                     return _this.genUid();
 
-                  case 7:
+                  case 8:
+                    if (!_this.options.lintShell) {
+                      _context.next = 19;
+                      break;
+                    }
+
+                    logInfo("lintShell: " + _this.options.lintShell);
+                    _context.prev = 10;
+
+                    shell.cd(_this.PROJECT_ROOT);
+                    _context.next = 14;
+                    return exec(_this.options.lintShell);
+
+                  case 14:
+                    _context.next = 19;
+                    break;
+
+                  case 16:
+                    _context.prev = 16;
+                    _context.t0 = _context["catch"](10);
+
+                    logErr("lintSlell error:", _context.t0);
+
+                  case 19:
+
                     callback();
 
-                  case 8:
+                  case 20:
                   case "end":
                     return _context.stop();
                 }
               }
-            }, _callee, _this);
+            }, _callee, _this, [[10, 16]]);
           }));
 
           return function (_x, _x2) {
             return _ref.apply(this, arguments);
           };
         }());
-        // done.tap(async () => {
-        //   logInfo("done");
-        //   await this.cleanUid();
-        // });
+        if (!this.options.keepChange) {
+          done.tap("WebpackPluginAutoUid", (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
+            return _regenerator2.default.wrap(function _callee2$(_context2) {
+              while (1) {
+                switch (_context2.prev = _context2.next) {
+                  case 0:
+                    logInfo("done");
+                    _context2.next = 3;
+                    return _this.cleanUid();
+
+                  case 3:
+                  case "end":
+                    return _context2.stop();
+                }
+              }
+            }, _callee2, _this);
+          })));
+        }
       }
     }
-  }, {
-    key: "checkAutoUid",
-    value: function () {
-      var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
-        return _regenerator2.default.wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                if (shell.which("auto-uid")) {
-                  _context2.next = 5;
-                  break;
-                }
-
-                logErr("less auto-uid,install it!");
-                _context2.next = 4;
-                return exec("npm install auto-uid");
-
-              case 4:
-                logInfo("auto-uid install success!");
-
-              case 5:
-              case "end":
-                return _context2.stop();
-            }
-          }
-        }, _callee2, this);
-      }));
-
-      function checkAutoUid() {
-        return _ref2.apply(this, arguments);
-      }
-
-      return checkAutoUid;
-    }()
   }, {
     key: "genUid",
     value: function () {
@@ -161,10 +168,6 @@ var WebpackPluginAutoUid = function () {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
-                _context3.next = 2;
-                return this.checkAutoUid();
-
-              case 2:
                 options = {
                   auto: true
                 };
@@ -186,7 +189,7 @@ var WebpackPluginAutoUid = function () {
                   logErr("genUid", err);
                 }
 
-              case 7:
+              case 5:
               case "end":
                 return _context3.stop();
             }

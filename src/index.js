@@ -1,11 +1,15 @@
 const shell = require("shelljs");
 let { logSuc, logInfo, logErr } = require("./utils");
 const AutoUid = require("auto-uid");
-
+console.log(
+  "%cAutoUid: ",
+  "color: MidnightBlue; background: Aquamarine;",
+  AutoUid
+);
 
 const exec = command => {
   return new Promise((resolve, reject) => {
-    shell.exec(command, { slice: true }, (code, stdout, stderr) => {
+    shell.exec(command, (code, stdout, stderr) => {
       if (+code === 0 && stdout) {
         resolve(stdout);
       } else {
@@ -21,6 +25,7 @@ class WebpackPluginAutoUid {
       logSuc = logInfo = () => {};
     }
     logInfo(`before run autoUid,comfirm your project has not unpush source.`);
+    logInfo(`options: ${JSON.stringify(options)}`);
     this.options = options;
     this.PROJECT_ROOT = process.env.PWD || process.cwd();
   }
@@ -36,25 +41,30 @@ class WebpackPluginAutoUid {
             await this.cleanUid();
             return callback();
           }
+          logInfo("genUid start");
           await this.genUid();
+          if (this.options.lintShell) {
+            logInfo(`lintShell: ${this.options.lintShell}`);
+            try {
+              shell.cd(this.PROJECT_ROOT);
+              await exec(this.options.lintShell);
+            } catch (err) {
+              logErr("lintSlell error:", err);
+            }
+          }
+
           callback();
         }
       );
-      // done.tap(async () => {
-      //   logInfo("done");
-      //   await this.cleanUid();
-      // });
-    }
-  }
-  async checkAutoUid() {
-    if (!shell.which("auto-uid")) {
-      logErr("less auto-uid,install it!");
-      await exec(`npm install auto-uid`);
-      logInfo(`auto-uid install success!`);
+      if (!this.options.keepChange) {
+        done.tap("WebpackPluginAutoUid", async () => {
+          logInfo("done");
+          await this.cleanUid();
+        });
+      }
     }
   }
   async genUid() {
-    await this.checkAutoUid();
     const options = {
       auto: true
     };
