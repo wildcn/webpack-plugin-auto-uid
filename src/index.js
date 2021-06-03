@@ -1,9 +1,11 @@
 const shell = require("shelljs");
 let { logSuc, logInfo, logErr } = require("./utils");
+const AutoUid = require("auto-uid");
+
 
 const exec = command => {
   return new Promise((resolve, reject) => {
-    shell.exec(command, (code, stdout, stderr) => {
+    shell.exec(command, { slice: true }, (code, stdout, stderr) => {
       if (+code === 0 && stdout) {
         resolve(stdout);
       } else {
@@ -13,66 +15,84 @@ const exec = command => {
   });
 };
 
-class AutoUid {
+class WebpackPluginAutoUid {
   constructor(options) {
     if (!options.debug) {
       logSuc = logInfo = () => {};
     }
-    logSuc("running!");
+    logInfo(`before run autoUid,comfirm your project has not unpush source.`);
     this.options = options;
     this.PROJECT_ROOT = process.env.PWD || process.cwd();
   }
   apply(compiler) {
     if (this.options.enable) {
       const { beforeRun, done } = compiler.hooks;
-      beforeRun.tapAsync("AutoUid", async (compilation, callback) => {
-        logSuc("beforeRun!");
-        // 编译前 使用auto-uid修改源码
-        if (this.options.clean) {
-          await this.cleanUid();
-          return callback();
+      beforeRun.tapAsync(
+        "WebpackPluginAutoUid",
+        async (compilation, callback) => {
+          logSuc("beforeRun!");
+          // 编译前 使用auto-uid修改源码
+          if (this.options.clean) {
+            await this.cleanUid();
+            return callback();
+          }
+          await this.genUid();
+          callback();
         }
-        await this.genUid();
-        callback();
-      });
-      if (!this.options.clean) {
-        done.tap("AutoUid", async () => {
-          logSuc("done!");
-          await this.cleanUid();
-        });
-      }
+      );
+      // done.tap(async () => {
+      //   logInfo("done");
+      //   await this.cleanUid();
+      // });
+    }
+  }
+  async checkAutoUid() {
+    if (!shell.which("auto-uid")) {
+      logErr("less auto-uid,install it!");
+      await exec(`npm install auto-uid`);
+      logInfo(`auto-uid install success!`);
     }
   }
   async genUid() {
-    if (!shell.which("auto-uid")) {
-      logInfo("less auto-uid,install it!");
-      await exec(`npm install auto-uid`);
-    }
-    // 获取项目主目录
-    let command = `auto-uid --auto`;
+    await this.checkAutoUid();
+    const options = {
+      auto: true
+    };
     if (this.options.dom) {
-      command += " --dom";
+      options.dom = true;
     }
     if (this.options.update) {
-      command += " --update";
+      options.update = true;
     }
     shell.cd(this.PROJECT_ROOT);
     try {
-      await exec(command);
-      logSuc("auto-uid --auto done");
+      let APP = new AutoUid(options).project;
+      APP.process();
+      this.changeFiles = APP.realChangeFiles;
+      logSuc(
+        "auto-uid work done ,options: ",
+        JSON.stringify(Object.keys(options))
+      );
     } catch (err) {
-      logErr(err);
+      logErr("genUid", err);
     }
   }
   async cleanUid() {
-    shell.cd(this.PROJECT_ROOT);
-    try {
-      logInfo("auto-uid --clean start");
-      await exec(`auto-uid --clean`);
-      logInfo("auto-uid --clean done");
-    } catch (err) {
-      logErr(err);
+    if (this.changeFiles) {
+      shell.cd(this.PROJECT_ROOT);
+      try {
+        logInfo("auto-uid --clean start");
+        if (shell.which("git")) {
+          const command = `git checkout -- ${this.changeFiles.join(" ")}`;
+          logInfo(command);
+          await exec(command);
+        }
+        logInfo("changeFile checkout!");
+        delete this.changeFiles;
+      } catch (err) {
+        logErr("cleanUid", err);
+      }
     }
   }
 }
-module.exports = AutoUid;
+module.exports = WebpackPluginAutoUid;

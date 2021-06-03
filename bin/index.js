@@ -1,5 +1,13 @@
 "use strict";
 
+var _keys = require("babel-runtime/core-js/object/keys");
+
+var _keys2 = _interopRequireDefault(_keys);
+
+var _stringify = require("babel-runtime/core-js/json/stringify");
+
+var _stringify2 = _interopRequireDefault(_stringify);
+
 var _regenerator = require("babel-runtime/regenerator");
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
@@ -29,9 +37,11 @@ var _require = require("./utils"),
     logInfo = _require.logInfo,
     logErr = _require.logErr;
 
+var AutoUid = require("auto-uid");
+
 var exec = function exec(command) {
   return new _promise2.default(function (resolve, reject) {
-    shell.exec(command, function (code, stdout, stderr) {
+    shell.exec(command, { slice: true }, function (code, stdout, stderr) {
       if (+code === 0 && stdout) {
         resolve(stdout);
       } else {
@@ -41,19 +51,19 @@ var exec = function exec(command) {
   });
 };
 
-var AutoUid = function () {
-  function AutoUid(options) {
-    (0, _classCallCheck3.default)(this, AutoUid);
+var WebpackPluginAutoUid = function () {
+  function WebpackPluginAutoUid(options) {
+    (0, _classCallCheck3.default)(this, WebpackPluginAutoUid);
 
     if (!options.debug) {
       logSuc = logInfo = function logInfo() {};
     }
-    logSuc("running!");
+    logInfo("before run autoUid,comfirm your project has not unpush source.");
     this.options = options;
     this.PROJECT_ROOT = process.env.PWD || process.cwd();
   }
 
-  (0, _createClass3.default)(AutoUid, [{
+  (0, _createClass3.default)(WebpackPluginAutoUid, [{
     key: "apply",
     value: function apply(compiler) {
       var _this = this;
@@ -63,7 +73,7 @@ var AutoUid = function () {
             beforeRun = _compiler$hooks.beforeRun,
             done = _compiler$hooks.done;
 
-        beforeRun.tapAsync("AutoUid", function () {
+        beforeRun.tapAsync("WebpackPluginAutoUid", function () {
           var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(compilation, callback) {
             return _regenerator2.default.wrap(function _callee$(_context) {
               while (1) {
@@ -102,76 +112,86 @@ var AutoUid = function () {
             return _ref.apply(this, arguments);
           };
         }());
-        if (!this.options.clean) {
-          done.tap("AutoUid", (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
-            return _regenerator2.default.wrap(function _callee2$(_context2) {
-              while (1) {
-                switch (_context2.prev = _context2.next) {
-                  case 0:
-                    logSuc("done!");
-                    _context2.next = 3;
-                    return _this.cleanUid();
-
-                  case 3:
-                  case "end":
-                    return _context2.stop();
-                }
-              }
-            }, _callee2, _this);
-          })));
-        }
+        // done.tap(async () => {
+        //   logInfo("done");
+        //   await this.cleanUid();
+        // });
       }
     }
+  }, {
+    key: "checkAutoUid",
+    value: function () {
+      var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
+        return _regenerator2.default.wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                if (shell.which("auto-uid")) {
+                  _context2.next = 5;
+                  break;
+                }
+
+                logErr("less auto-uid,install it!");
+                _context2.next = 4;
+                return exec("npm install auto-uid");
+
+              case 4:
+                logInfo("auto-uid install success!");
+
+              case 5:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function checkAutoUid() {
+        return _ref2.apply(this, arguments);
+      }
+
+      return checkAutoUid;
+    }()
   }, {
     key: "genUid",
     value: function () {
       var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3() {
-        var command;
+        var options, APP;
         return _regenerator2.default.wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
               case 0:
-                if (shell.which("auto-uid")) {
-                  _context3.next = 4;
-                  break;
-                }
+                _context3.next = 2;
+                return this.checkAutoUid();
 
-                logInfo("less auto-uid,install it!");
-                _context3.next = 4;
-                return exec("npm install auto-uid");
-
-              case 4:
-                // 获取项目主目录
-                command = "auto-uid --auto";
+              case 2:
+                options = {
+                  auto: true
+                };
 
                 if (this.options.dom) {
-                  command += " --dom";
+                  options.dom = true;
                 }
                 if (this.options.update) {
-                  command += " --update";
+                  options.update = true;
                 }
                 shell.cd(this.PROJECT_ROOT);
-                _context3.prev = 8;
-                _context3.next = 11;
-                return exec(command);
+                try {
+                  APP = new AutoUid(options).project;
 
-              case 11:
-                logSuc("auto-uid --auto done");
-                _context3.next = 17;
-                break;
+                  APP.process();
+                  this.changeFiles = APP.realChangeFiles;
+                  logSuc("auto-uid work done ,options: ", (0, _stringify2.default)((0, _keys2.default)(options)));
+                } catch (err) {
+                  logErr("genUid", err);
+                }
 
-              case 14:
-                _context3.prev = 14;
-                _context3.t0 = _context3["catch"](8);
-
-                logErr(_context3.t0);
-
-              case 17:
+              case 7:
               case "end":
                 return _context3.stop();
             }
           }
-        }, _callee3, this, [[8, 14]]);
+        }, _callee3, this);
       }));
 
       function genUid() {
@@ -184,34 +204,50 @@ var AutoUid = function () {
     key: "cleanUid",
     value: function () {
       var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4() {
+        var command;
         return _regenerator2.default.wrap(function _callee4$(_context4) {
           while (1) {
             switch (_context4.prev = _context4.next) {
               case 0:
+                if (!this.changeFiles) {
+                  _context4.next = 16;
+                  break;
+                }
+
                 shell.cd(this.PROJECT_ROOT);
-                _context4.prev = 1;
+                _context4.prev = 2;
 
                 logInfo("auto-uid --clean start");
-                _context4.next = 5;
-                return exec("auto-uid --clean");
 
-              case 5:
-                logInfo("auto-uid --clean done");
-                _context4.next = 11;
+                if (!shell.which("git")) {
+                  _context4.next = 9;
+                  break;
+                }
+
+                command = "git checkout -- " + this.changeFiles.join(" ");
+
+                logInfo(command);
+                _context4.next = 9;
+                return exec(command);
+
+              case 9:
+                logInfo("changeFile checkout!");
+                delete this.changeFiles;
+                _context4.next = 16;
                 break;
 
-              case 8:
-                _context4.prev = 8;
-                _context4.t0 = _context4["catch"](1);
+              case 13:
+                _context4.prev = 13;
+                _context4.t0 = _context4["catch"](2);
 
-                logErr(_context4.t0);
+                logErr("cleanUid", _context4.t0);
 
-              case 11:
+              case 16:
               case "end":
                 return _context4.stop();
             }
           }
-        }, _callee4, this, [[1, 8]]);
+        }, _callee4, this, [[2, 13]]);
       }));
 
       function cleanUid() {
@@ -221,7 +257,7 @@ var AutoUid = function () {
       return cleanUid;
     }()
   }]);
-  return AutoUid;
+  return WebpackPluginAutoUid;
 }();
 
-module.exports = AutoUid;
+module.exports = WebpackPluginAutoUid;

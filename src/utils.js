@@ -1,19 +1,17 @@
-const SUCCESS = "#42b983";
-const INFO = "#ffeb3b";
-const WARNING = "#ffb7da";
+import chalk from "chalk";
 
-const color = color => {
-  return (content, ...args) => {
-    console.log(
-      `%c[webpack-plugin-auto-uid]`,
-      `color:${color};background:#333`,
-      `${content} ${args.join(" ")}`
-    );
-  };
-};
+const ERROR = chalk.bold.red;
+const SUCCESS = chalk.greenBright;
+const INFO = chalk.bold.blue;
+const WARNING = chalk.keyword("orange");
 
 module.exports = {
-  logSuc: color(SUCCESS),
-  logErr: color(WARNING),
-  logInfo: color(INFO)
+  logSuc: (...args) =>
+    console.log(SUCCESS("[webpack-plugin-auto-uid]"), args.join(" ")),
+  logErr: (...args) =>
+    console.log(ERROR("[webpack-plugin-auto-uid]"), args.join(" ")),
+  logWar: (...args) =>
+    console.log(WARNING("[webpack-plugin-auto-uid]"), args.join(" ")),
+  logInfo: (...args) =>
+    console.log(INFO("[webpack-plugin-auto-uid]"), args.join(" "))
 };

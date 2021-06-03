@@ -37,3 +37,11 @@ const isPro = process.env.NODE_ENV === 'production';
 ## debug
 开启 info 和 log 级别的日志 error 级别日志默认开启
 
+
+# 流程
+
+- webpack.compiler.beforeRun => create uid by doms
+- gen dist.json
+- webpack.compiler
+- checkout changefile
+
