@@ -1,11 +1,6 @@
 const shell = require("shelljs");
 let { logSuc, logInfo, logErr } = require("./utils");
 const AutoUid = require("auto-uid");
-console.log(
-  "%cAutoUid: ",
-  "color: MidnightBlue; background: Aquamarine;",
-  AutoUid
-);
 
 const exec = command => {
   return new Promise((resolve, reject) => {
