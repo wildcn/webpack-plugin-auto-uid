@@ -2,6 +2,7 @@
 
 自动为 DOM 添加自定义属性 ID，便于 E2E 测试或其他用用途。
 
+PS. 可配合webpack-plugin-auto-uid 使用，也可单独引入
 # How to Use
 
 ```bash
