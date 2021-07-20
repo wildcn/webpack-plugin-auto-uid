@@ -38,7 +38,6 @@ var _require = require("./utils"),
     logErr = _require.logErr;
 
 var AutoUid = require("auto-uid");
-console.log("%cAutoUid: ", "color: MidnightBlue; background: Aquamarine;", AutoUid);
 
 var exec = function exec(command) {
   return new _promise2.default(function (resolve, reject) {
