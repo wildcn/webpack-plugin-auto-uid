@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "auto-uid": "^1.0.7",
+    "auto-uid": "^1.0.8",
     "shelljs": "^0.8.4"
   },
   "devDependencies": {
